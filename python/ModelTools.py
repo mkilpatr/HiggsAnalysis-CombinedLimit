@@ -82,7 +82,41 @@ class ModelBuilderBase():
         if self.options.bin: self.factory_(vardef);
         else: self.out.write(vardef+";\n");
     def doExp(self,name,expression,vars):
-        if self.options.bin: self.factory_('expr::%s("%s",%s)'%(name,expression,vars));
+        if self.options.bin: 
+            if len('expr::%s("%s",%s)'%(name,expression,vars)) > 1000:
+                exp = str(expression).strip('()')
+                exp = exp.split('+')
+                var = str(vars).split(',')
+                strlength = len(var)
+                var1 = ""
+                var2 = ""
+                exp1 = ""
+                exp2 = ""
+                for i in xrange(strlength):
+                    index, rate = exp[i].split('*')
+                    if i < strlength/2:
+                        if i != (strlength/2 - 1): 
+                            var1 += var[i]+","
+                            exp1 += exp[i]+"+"
+                        else:			  	
+                            var1 += var[i]
+                            exp1 += exp[i]
+                    else:
+                        if i != (strlength - 1): 
+                            var2 += var[i]+","
+                            exp2 += "@"+str(i-strlength/2)+"*"+rate+"+"
+                        else:    	  	
+                            var2 += var[i]
+                            exp2 += "@"+str(i-strlength/2)+"*"+rate
+                #print('expr::%s("(%s)",%s)'%(name+'_1',exp1,var1))
+                self.factory_('expr::%s("(%s)",%s)'%(name+'_1',exp1,var1));
+                #print('expr::%s("(%s)",%s)'%(name+'_2',exp2,var2))
+                self.factory_('expr::%s("(%s)",%s)'%(name+'_2',exp2,var2));
+                totalName = name+'_1,'+name+'_2'
+                #print('expr::%s("(@0+@1)",%s)'%(name,totalName))
+                self.factory_('expr::%s("(@0+@1)",%s)'%(name,totalName))
+            else:
+                self.factory_('expr::%s("%s",%s)'%(name,expression,vars));
         else: self.out.write('%s = expr::%s("%s",%s)'%(name,name,expression,vars)+";\n");
     def doSet(self,name,vars):
         if self.options.bin: self.out.defineSet(name,vars)
